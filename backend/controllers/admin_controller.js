@@ -10,7 +10,6 @@ const addDoctor = async (req, res) => {
         const imageFile = req.file
 
         console.log({ name, email, password, speciality, degree, experience, about, fees, address }, imageFile);
-        res.send("hello");
     } catch (error) {
         
     }
