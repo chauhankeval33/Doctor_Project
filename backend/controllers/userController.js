@@ -3,6 +3,8 @@ import bcrypt from "bcrypt";
 import userModel from "../models/user_model.js";
 import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
+import doctorModel from "../models/doctor_model.js";
+import appointmentModel from "../models/appointment_model.js";
 
 
 //api to register 
@@ -43,8 +45,8 @@ const registerUser = async (req, res) => {
         console.log(error);
         res.json({ success: false, message: error.message })
     }
-
 }
+
 //api for user login
 
 const loginUser = async (req, res) => {
@@ -74,7 +76,7 @@ const loginUser = async (req, res) => {
 
 const getProfile = async (req, res) => {
     try {
-        const { userId } = req.body 
+        const { userId } = req.body
         const userData = await userModel.findById(userId).select('-password');
         res.json({ success: true, userData })
     } catch (error) {
@@ -92,21 +94,11 @@ const updateProfile = async (req, res) => {
             return res.json({ success: false, message: "data missing" })
         }
 
-        //console.log(userId + " " + name + " " + phone + " " + address + " " + dob + " " + gender)
-
         const updatedUser1 = await userModel.findOneAndUpdate(
             { _id: userId },
             { name, phone, address: JSON.parse(address), dob, gender },
             { new: true, runValidators: true }
         );
-
-        //console.log(updatedUser1)
-
-        // const updatedUser1 = await userModel.findByIdAndUpadate(
-        //     userId,
-        //     { name, phone, address: JSON.parse(address), dob, gender },
-        //     { new: true }
-        // )
 
         if (imageFile) {
             const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: "image" })
@@ -118,14 +110,6 @@ const updateProfile = async (req, res) => {
                 { new: true, runValidators: true }
             );
 
-           // console.log(updatedUser2);
-
-            // const updatedUser2 = await userModel.findByIdAndUpdate(
-            // userId,
-            // { image: imageURL },
-            // { new: true }
-            // );
-
         }
         res.json({ success: true, message: "profile updated:" })
     } catch (error) {
@@ -133,4 +117,128 @@ const updateProfile = async (req, res) => {
         res.json({ success: false, message: error.message })
     }
 }
-export { registerUser, loginUser, getProfile, updateProfile }
+
+//API to book appointment
+
+const bookAppointment = async (req, res) => {
+    try {
+
+        const { userId, docId, slotDate, slotTime } = req.body
+
+        const docData = await doctorModel.findById(docId).select('-password')
+
+        if (!docData.available) {
+            return res.json({ success: false, message: 'Doctor not available' })
+        }
+
+        let slots_booked = docData.slots_booked
+
+        //checking for slot availabilty
+
+        if (slots_booked[slotDate]) {
+            if (slots_booked[slotDate].includes(slotTime)) {
+                return res.json({ success: false, message: 'slot not available' })
+            } else {
+                slots_booked[slotDate].push(slotTime)
+            }
+        } else {
+            slots_booked[slotDate] = []
+            slots_booked[slotDate].push(slotTime)
+        }
+
+        const userData = await userModel.findById(userId).select('-password')
+
+        delete docData.slots_booked
+
+        const appointmentData = {
+            userId,
+            docId,
+            userData,
+            docData,
+            amount: docData.fees,
+            slotTime,
+            slotDate,
+            date: Date.now()
+        }
+
+        const newAppointment = new appointmentModel(appointmentData)
+        await newAppointment.save()
+
+        //save new slot data in docData
+
+        await doctorModel.findOneAndUpdate(
+            { _id: docId },
+            { $set: { slots_booked: slots_booked } },
+            { new: true, runValidators: true }
+        );
+
+        res.json({ success: true, message: "Appointment Booked" })
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message })
+    }
+}
+
+//API to get appointment
+
+const listAppointment = async (req, res) => {
+    try {
+
+        const { userId } = req.body
+        const appointments = await appointmentModel.find({ userId })
+        res.json({ success: true, appointments })
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message })
+    }
+}
+
+//API to cancel appointment
+
+const cancelAppointment = async (req, res) => {
+    try {
+        const { userId, appointmentId } = req.body
+        const appointmentData = await appointmentModel.findById(appointmentId)
+
+        // verify appointment user
+
+        if (appointmentData.userId !== userId) {
+            return res.json({ success: false, message: 'unautorized user' })
+        }
+
+        await appointmentModel.findOneAndUpdate(
+            { _id: appointmentId },
+            { $set: { cancelled: true } }
+        );
+
+        //  releasing doctor slot
+
+        const { docId, slotDate, slotTime } = appointmentData
+
+        const doctorData = await doctorModel.findById(docId)
+
+        let slots_booked = doctorData.slots_booked
+
+        slots_booked[slotDate] = slots_booked[slotDate].filter((time) => time !== slotTime)
+
+        await doctorModel.findOneAndUpdate(
+            { _id: docId },
+            { $set: { slots_booked: slots_booked } }
+        );
+        res.json({ success: true, message: 'appointment cancelled' })
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// Api to make payment of appointment using razorpay
+
+const paymentRazorpay = async (req,res) => {
+
+}
+
+export { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment }   
