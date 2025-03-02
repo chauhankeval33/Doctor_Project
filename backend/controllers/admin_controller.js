@@ -4,6 +4,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import doctorModel from '../models/doctor_model.js';
 import jwt from 'jsonwebtoken';
 import appointmentModel from '../models/appointment_model.js';
+import userModel from '../models/user_model.js';
 
 
 
@@ -100,4 +101,57 @@ const appointmentAdmin = async (req, res) => {
     }
 }
 
-export { addDoctor, adminLogin, allDoctor,appointmentAdmin }
+//Api for appointment cancel
+const appointmentCancel = async (req, res) => {
+    try {
+        const { appointmentId } = req.body
+        const appointmentData = await appointmentModel.findById(appointmentId)
+
+        await appointmentModel.findOneAndUpdate(
+            { _id: appointmentId },
+            { $set: { cancelled: true } }
+        );
+
+        //  releasing doctor slot
+
+        const { docId, slotDate, slotTime } = appointmentData
+
+        const doctorData = await doctorModel.findById(docId)
+
+        let slots_booked = doctorData.slots_booked
+
+        slots_booked[slotDate] = slots_booked[slotDate].filter((time) => time !== slotTime)
+
+        await doctorModel.findOneAndUpdate(
+            { _id: docId },
+            { $set: { slots_booked: slots_booked } }
+        );
+        res.json({ success: true, message: 'appointment cancelled' })
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message })
+    }
+}
+//API to get dashboard data for admin panel
+
+const adminDashboard = async (req, res) => {
+    try {
+        const doctors = await doctorModel.find({})
+        const users = await userModel.find({})
+        const appointments = await appointmentModel.find({})
+
+        const dashData = {
+            doctors: doctors.length,
+            appointments: appointments.length,
+            patients: users.length,
+            latestAppointment: appointments.reverse().slice(0, 5)
+        }
+
+        res.json({ success: true, dashData })
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message })
+    }
+}
+export { addDoctor, adminLogin, allDoctor, appointmentAdmin, appointmentCancel, adminDashboard }

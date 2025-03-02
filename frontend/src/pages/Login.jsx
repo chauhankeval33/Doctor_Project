@@ -15,18 +15,18 @@ const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  const onSubmiteHandler = async (event) => {
+  const onSubmitHandler = async (event) => {
     event.preventDefault()
     try {
-      if (state === 'Sign up') {
-        const { data } = await axios.post(backendUrl + '/api/user/register', { name, email, password })
+      if (state === 'Sign Up') {
+        const { data } = await axios.post(backendUrl + '/api/user/register', { name, password, email })
         if (data.success) {
           localStorage.setItem('token', data.token)
           setToken(data.token)
         } else {
           toast.error(data.message)
         }
-      }else{
+      } else {
         const { data } = await axios.post(backendUrl + '/api/user/login', { email, password })
         if (data.success) {
           localStorage.setItem('token', data.token)
@@ -40,13 +40,13 @@ const Login = () => {
     }
   }
 
-  useEffect(()=>{
-if (token) {
-  navigate('/')
-}
-  },[token])
+  useEffect(() => {
+    if (token) {
+      navigate('/')
+    }
+  }, [token])
   return (
-    <form onSubmit={onSubmiteHandler} className='min-h-[80vh] flex items-center'>
+    <form onSubmit={onSubmitHandler} className='min-h-[80vh] flex items-center'>
       <div className='flex flex-col m-auto items-start gap-3 border rounded-xl p-8 min-w-[340px] sm:min-w-96 text-zinc-600 shadow-lg text-sm'>
         <p className='text-2xl font-semibold'>{state === "Sign Up" ? "create account" : "login"}</p >
         <p>pleace {state === "Sign Up" ? "Sign Up" : "log in"} to book an appointment</p>
@@ -78,3 +78,4 @@ if (token) {
 }
 
 export default Login
+
