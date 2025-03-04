@@ -31,7 +31,7 @@ const Appointment = () => {
     //get date
     let today = new Date()
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 1; i < 8; i++) {
       let currentDate = new Date(today)
       currentDate.setDate(today.getDate() + i)
 
@@ -51,7 +51,7 @@ const Appointment = () => {
       while (currentDate < endTime) {
         let formattedTime = currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-        let day = currentDate.getDate()
+        let day = currentDate.getDate() 
         let month = currentDate.getMonth() + 1
         let year = currentDate.getFullYear()
 
@@ -84,7 +84,7 @@ const Appointment = () => {
 
       const date = docSlot[slotIndex][0].datetime
 
-      let day = date.getDate()
+      let day = date.getDate() ;
       let month = date.getMonth() + 1
       let year = date.getFullYear()
 

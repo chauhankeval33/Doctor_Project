@@ -26,7 +26,7 @@ const AddDoctor = () => {
         event.preventDefault();
         try {
             if (!docImg) {
-                return toast.error("image is required:")
+                return toast.error("image is required")
             }
 
             const formData = new FormData()
