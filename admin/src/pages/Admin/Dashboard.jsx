@@ -8,7 +8,7 @@ const Dashboard = () => {
 
   const { aToken, getDasdhData, cancelAppointment, dashData } = useContext(admin_context)
 
-  const {sloatDateFormat} = useContext(app_context) 
+  const { sloatDateFormat } = useContext(app_context)
 
   useEffect(() => {
     if (aToken) {
@@ -42,6 +42,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
       <div className='bg-white'>
         <div className='flex items-center gap-2.5 px-4 mt-10 rounded-t border'>
           <img src={assets.list_icon} alt="" />
@@ -50,16 +51,18 @@ const Dashboard = () => {
         <div className='pt-4 border border-t-0'>
           {
             dashData.latestAppointment.map((item, index) => (
-              <div className='flex items-center px-6 py-3 hover:bg-gray-100 'key={index}>
+              <div className='flex items-center px-6 py-3 hover:bg-gray-100 ' key={index}>
                 <img className='rounded-full w-10 ' src={item.docData.image} alt="" />
                 <div className=' flex-1 text-sm'>
                   <p className='text-gray-600 font-medium'>{item.docData.name}</p>
-                  <p className='text-gray-800'>{sloatDateFormat(item.slotDate)}</p>  
+                  <p className='text-gray-800'>{sloatDateFormat(item.slotDate)}</p>
                 </div>
                 {
                   item.cancelled
                     ? <p className='text-red-400 text-sm front-medium'>cancelled</p>
-                    : <img onClick={() => cancelAppointment(item._id)} className='w-10 cursor-pointer' src={assets.cancel_icon} alt="" />
+                    : item.isCompleted
+                      ? <p className='text-green-500 text-sm front-medium'>Completed</p>
+                      : <img onClick={() => cancelAppointment(item._id)} className='w-10 cursor-pointer' src={assets.cancel_icon} alt="" />
                 }
               </div>
             ))

@@ -10,6 +10,7 @@ const Navbar = () => {
 
     const { token, setToken, userData} = useContext(AppContext)
 
+
     const [showMenu, setShowMenu] = useState(false)
 
     const logout = () => {
